@@ -17,8 +17,7 @@ ST7735_TFT myTFT;
 #define BUZZ 1
 
 // Graphics
-#define BACKGR 0xBB20
-//ffe7b5
+#define BACKGR 0x0337
 
 // Map
 #define MAPH 7
@@ -234,11 +233,11 @@ int main() {
     gpio_set_dir(BTN_4, GPIO_IN);
 
     //*************** USER OPTION 0 SPI_SPEED + TYPE ***********
-	bool bhardwareSPI = true; // true for hardware spi,
+	bool bhardwareSPI = false; // true for hardware spi,
 
 	if (bhardwareSPI == true)
 	{								   // hw spi
-		uint32_t TFT_SCLK_FREQ = 62500; // Spi freq in KiloHertz , 1000 = 1Mhz , max 62500
+		uint32_t TFT_SCLK_FREQ = 20000; // Spi freq in KiloHertz , 1000 = 1Mhz , max 62500
 		myTFT.TFTInitSPIType(TFT_SCLK_FREQ, spi0);
 	}
 	else
@@ -268,7 +267,7 @@ int main() {
 	// ******************************************
 
 	// ******** USER OPTION 3 PCB_TYPE  **************************
-	myTFT.TFTInitPCBType(myTFT.TFT_ST7735R_Red); // pass enum,4 choices,see README
+	myTFT.TFTInitPCBType(myTFT.TFT_ST7735S_Black); // pass enum,4 choices,see README
 												 //**********************************************************
 
     const uint8_t *Mario;
@@ -292,6 +291,7 @@ int main() {
     char name [] = "MARIO";
     char world[] = "WORLD";
     char time[] = "TIME";
+    char timer[20];
 
 
     //Map
@@ -317,12 +317,13 @@ int main() {
     multicore_launch_core1(main2);
     while(1) {
         ++t;
+        sprintf(timer,"%d",t);
         //myTFT.TFTfillScreen(BACKGR);
         //Button actions
 
         //Right
         if(gpio_get(BTN_2)){
-            x+=5;
+            x+=3;
             if(f==0){
                 if(t % 2){
                     spr = 3;
@@ -335,7 +336,7 @@ int main() {
 
         //Left
         else if(gpio_get(BTN_3)) {
-            x-=5;
+            x-=3;
             if(f==0){
                 if(t % 2){
                     spr = 4;
@@ -373,14 +374,14 @@ int main() {
 
         if(f==1){
             ++j;
-            y-=6;
-            if(j==6) {
+            y-=5;
+            if(j==7) {
                 f = 2;
             }
         }
         else if(f==2){
             --j;
-            y+=6;
+            y+=5;
             if(j==0) {
                 f = 0;
             }
@@ -473,10 +474,11 @@ int main() {
 
         myTFT.TFTdrawSpriteData(xd2+68, 78, (uint8_t *)pKoopaIdle1, 16, 27, BACKGR);
         myTFT.TFTdrawSpriteData(xd1, y, (uint8_t *)Mario, 16, 24, BACKGR);
-        myTFT.TFTdrawText(20, 8, name, ST7735_WHITE, BACKGR, 1);
-        myTFT.TFTdrawText(92, 8, world, ST7735_WHITE, BACKGR, 1);
-        myTFT.TFTdrawText(140, 8, time, ST7735_WHITE, BACKGR, 1);
-        TFT_MILLISEC_DELAY(50);
+        myTFT.TFTdrawText(20, 0, name, ST7735_WHITE, BACKGR, 1);
+        myTFT.TFTdrawText(92, 0, world, ST7735_WHITE, BACKGR, 1);
+        myTFT.TFTdrawText(140, 0, time, ST7735_WHITE, BACKGR, 1);
+        myTFT.TFTdrawText(140, 8, timer, ST7735_WHITE, BACKGR, 1);
+        TFT_MILLISEC_DELAY(10);
 
         //myTFT.TFTdrawBitmap16Data(y, xd1, (uint8_t *)Mario, 24, 16);
     }
