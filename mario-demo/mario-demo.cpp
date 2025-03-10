@@ -237,7 +237,7 @@ int main() {
 
 	if (bhardwareSPI == true)
 	{								   // hw spi
-		uint32_t TFT_SCLK_FREQ = 20000; // Spi freq in KiloHertz , 1000 = 1Mhz , max 62500
+		uint32_t TFT_SCLK_FREQ = 62500; // Spi freq in KiloHertz , 1000 = 1Mhz , max 62500
 		myTFT.TFTInitSPIType(TFT_SCLK_FREQ, spi0);
 	}
 	else
@@ -271,7 +271,7 @@ int main() {
 												 //**********************************************************
 
     const uint8_t *Mario;
-    int pos[2] = {32,81};
+    int pos[2] = {32,81}; //xy
     int vel[2] = {0,0};
     int acc[2] = {0,10};
     int y = 81;
@@ -292,6 +292,7 @@ int main() {
     char world[] = "WORLD";
     char time[] = "TIME";
     char timer[20];
+    char position[30];
 
 
     //Map
@@ -318,12 +319,13 @@ int main() {
     while(1) {
         ++t;
         sprintf(timer,"%d",t);
+        sprintf(position,"X:%d,Y:%d",pos[0],pos[1]);
         //myTFT.TFTfillScreen(BACKGR);
         //Button actions
 
         //Right
         if(gpio_get(BTN_2)){
-            x+=3;
+            pos[0]+=3;
             if(f==0){
                 if(t % 2){
                     spr = 3;
@@ -336,7 +338,7 @@ int main() {
 
         //Left
         else if(gpio_get(BTN_3)) {
-            x-=3;
+            pos[0]-=3;
             if(f==0){
                 if(t % 2){
                     spr = 4;
@@ -374,14 +376,14 @@ int main() {
 
         if(f==1){
             ++j;
-            y-=5;
+            pos[1]-=5;
             if(j==7) {
                 f = 2;
             }
         }
         else if(f==2){
             --j;
-            y+=5;
+            pos[1]+=5;
             if(j==0) {
                 f = 0;
             }
@@ -425,20 +427,19 @@ int main() {
         }
         */
 
-        if (x>96){
+        if (pos[0]>96){
             xd1 = 96;
-            xd2 = -x+96;
+            xd2 = -pos[0]+96;
         }
-        else if (x<17){
-            x = 18;
+        else if (pos[0]<17){
+            pos[0] = 18;
             xd2 = 0;
         }
         else{
-            xd1 = x;
+            xd1 = pos[0];
             xd2 = 0;
         }
-
-
+        
         for (int j = 0; j < MAPH; j++) {
             for (int k = 0; k < MAPW; k++) {
                 int jm = j * 16 + 24;
@@ -473,11 +474,12 @@ int main() {
         }
 
         myTFT.TFTdrawSpriteData(xd2+68, 78, (uint8_t *)pKoopaIdle1, 16, 27, BACKGR);
-        myTFT.TFTdrawSpriteData(xd1, y, (uint8_t *)Mario, 16, 24, BACKGR);
+        myTFT.TFTdrawSpriteData(xd1, pos[1], (uint8_t *)Mario, 16, 24, BACKGR);
         myTFT.TFTdrawText(20, 0, name, ST7735_WHITE, BACKGR, 1);
-        myTFT.TFTdrawText(92, 0, world, ST7735_WHITE, BACKGR, 1);
-        myTFT.TFTdrawText(140, 0, time, ST7735_WHITE, BACKGR, 1);
-        myTFT.TFTdrawText(140, 8, timer, ST7735_WHITE, BACKGR, 1);
+        myTFT.TFTdrawText(20, 8, position, ST7735_WHITE, BACKGR, 1);
+        myTFT.TFTdrawText(94, 0, world, ST7735_WHITE, BACKGR, 1);
+        myTFT.TFTdrawText(142, 0, time, ST7735_WHITE, BACKGR, 1);
+        myTFT.TFTdrawText(142, 8, timer, ST7735_WHITE, BACKGR, 1);
         TFT_MILLISEC_DELAY(10);
 
         //myTFT.TFTdrawBitmap16Data(y, xd1, (uint8_t *)Mario, 24, 16);
