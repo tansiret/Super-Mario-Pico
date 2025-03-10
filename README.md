@@ -1,5 +1,5 @@
 # Super-Mario-Pico
-A basic Super Mario demo written in C for RP2350 Hazard3 cores. (Still WIP)
+A basic Super Mario demo written in C for Raspberry Pi Pico/Pico 2. (Still WIP)
 
 # Hardware
 PCB coming soon
