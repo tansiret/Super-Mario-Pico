@@ -998,7 +998,7 @@ Display_Return_Codes_e ST7735_TFT_graphics::TFTdrawBitmap16Data(uint8_t x, uint8
 	if ((x + w - 1) >= _widthTFT)
 		w = _widthTFT - x;
 	if ((y + h - 1) >= _heightTFT)
-		h = _heightTFT - y;
+		h = _heightTFT - y; 
 
 	// Process bitmap data row-by-row
 	for (j = 0; j < h; j++)
@@ -1414,13 +1414,14 @@ void ST7735_TFT_graphics::setTextColor(uint16_t c, uint16_t b)
 	@param w width of the sprite in pixels
 	@param h height of the sprite in pixels
 	@param backgroundColor the background color of sprite (16 bit 565) this will be made transparent
+	@param SpriteOrTile true the background color is ignored.if false it is printed.
 	@note Experimental , does not use buffer or malloc, just draw pixel
 	@return
 		-# Display_Success=success
 		-# Display_BitmapNullptr=invalid pointer object
 		-# Display_BitmapScreenBounds=Co-ordinates out of bounds
 */
-Display_Return_Codes_e  ST7735_TFT_graphics::TFTdrawSpriteData(uint8_t x, uint8_t y, uint8_t *pBmp, uint8_t w, uint8_t h, uint16_t backgroundColor)
+Display_Return_Codes_e  ST7735_TFT_graphics::TFTdrawSpriteData(uint8_t x, uint8_t y, uint8_t *pBmp, uint8_t w, uint8_t h, uint16_t backgroundColor, bool SpriteOrTile)
 {
 	uint8_t i, j;
 	uint16_t colour;
@@ -1430,16 +1431,17 @@ Display_Return_Codes_e  ST7735_TFT_graphics::TFTdrawSpriteData(uint8_t x, uint8_
 		printf("Error TFTdrawSprite 1: Sprite array is nullptr\r\n");
 		return Display_BitmapNullptr;
 	}
-	// Check bounds
-	if ((x >= _widthTFT) || (y >= _heightTFT))
-	{
-		printf("Error TFTdrawSprite 2: Sprite out of screen bounds\r\n");
-		return Display_BitmapScreenBounds;
-	}
-	if ((x + w - 1) >= _widthTFT)
-		w = _widthTFT - x;
-	if ((y + h - 1) >= _heightTFT)
-		h = _heightTFT - y;
+ 	/* Check bounds , commented out in branch changes 03-2025
+  	// if ((x >= _widthTFT) || (y >= _heightTFT))
+	// {
+	// 	printf("Error TFTdrawSprite 2: Sprite out of screen bounds\r\n");
+	// 	return Display_BitmapScreenBounds;
+	// } 
+	// if ((x + w - 1) >= _widthTFT)
+	// 	w = _widthTFT - x;
+	// if ((y + h - 1) >= _heightTFT)
+	// 	h = _heightTFT - y; 
+	*/
 
 	for(j = 0; j < h; j++)
 	{
@@ -1447,7 +1449,11 @@ Display_Return_Codes_e  ST7735_TFT_graphics::TFTdrawSpriteData(uint8_t x, uint8_
 		{
 			colour = (pBmp[0] << 8) | pBmp[1];
 			pBmp += 2;
-			if (colour != backgroundColor){
+			if(SpriteOrTile){
+				if (colour != backgroundColor){
+					TFTdrawPixel(x+i-1, y + j-1, colour);
+				}
+			}else{
 				TFTdrawPixel(x+i-1, y + j-1, colour);
 			}
 		}

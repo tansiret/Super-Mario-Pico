@@ -223,6 +223,8 @@ void main2() {
 
 int main() {
     stdio_init_all(); // Initialize chosen serial port
+    sleep_ms(500);
+    printf("Start\r\n");
 	gpio_init(BTN_1);
     gpio_set_dir(BTN_1, GPIO_IN);
 	gpio_init(BTN_2);
@@ -231,6 +233,11 @@ int main() {
     gpio_set_dir(BTN_3, GPIO_IN);
 	gpio_init(BTN_4);
     gpio_set_dir(BTN_4, GPIO_IN);
+
+    gpio_pull_down(BTN_1);
+    gpio_pull_down(BTN_2);
+    gpio_pull_down(BTN_3);
+    gpio_pull_down(BTN_4);
 
     //*************** USER OPTION 0 SPI_SPEED + TYPE ***********
 	bool bhardwareSPI = false; // true for hardware spi,
@@ -260,9 +267,9 @@ int main() {
 
 	// ****** USER OPTION 2 Screen Setup ******
 	uint8_t OFFSET_COL = 0;	   // 2, These offsets can be adjusted for any issues->
-	uint8_t OFFSET_ROW = -16;	   // 3, with manufacture tolerance/defects
+	uint8_t OFFSET_ROW = 0;	   // 3, with manufacture tolerance/defects
 	uint16_t TFT_WIDTH = 128;  // Screen width in pixels
-	uint16_t TFT_HEIGHT = 192; // Screen height in pixels
+	uint16_t TFT_HEIGHT = 160; // Screen height in pixels
 	myTFT.TFTInitScreenSize(OFFSET_COL, OFFSET_ROW, TFT_WIDTH, TFT_HEIGHT);
 	// ******************************************
 
@@ -309,7 +316,7 @@ int main() {
 
     //myTFT.TFTdrawBitmap16Data(0, 0, (uint8_t *)pSuperMarioWorldTitle, 128, 160);
     myTFT.TFTsetRotation(myTFT.TFT_Degrees_270);
-    myTFT.TFTdrawBitmap16Data(16, 0, (uint8_t *)pSuperMarioWorldTitle, 160, 128);
+    myTFT.TFTdrawBitmap16Data(0, 0, (uint8_t *)pSuperMarioWorldTitle, 160, 128);
     myTFT.TFTdrawText(37, 80, teststr1, ST7735_WHITE, BACKGR, 1);
     myTFT.TFTdrawText(37, 90, teststr2, ST7735_WHITE, BACKGR, 1);
     myTFT.TFTdrawText(37, 100, teststr3, ST7735_WHITE, BACKGR, 1);
@@ -447,39 +454,39 @@ int main() {
                 xdk = xd2 + km;
                 
                 // Only draw tiles that are visible on screen (0-160 horizontal range)
-                if (xdk >= -16 && xdk < 176) {
+                if (xdk >= 0 && xdk < 160) {
                     if (map[j][k] == 0) {
                         myTFT.TFTfillRect(xdk, jm, 16, 16, BACKGR);
                     } else if (map[j][k] == 10) {
-                        myTFT.TFTdrawBitmap16Data(xdk, jm, (uint8_t *)pDirt, 16, 16);
+                        myTFT.TFTdrawSpriteData(xdk, jm, (uint8_t *)pDirt, 16, 16, BACKGR , false);
                     } else if (map[j][k] == 11) {
-                        myTFT.TFTdrawBitmap16Data(xdk, jm, (uint8_t *)pGrass, 16, 16);
+                        myTFT.TFTdrawSpriteData(xdk, jm, (uint8_t *)pGrass, 16, 16,BACKGR , false);
                     } else if (map[j][k] == 12) {
-                        myTFT.TFTdrawBitmap16Data(xdk, jm, (uint8_t *)pWoodBlock, 16, 16);
+                        myTFT.TFTdrawSpriteData(xdk, jm, (uint8_t *)pWoodBlock, 16, 16, BACKGR , false);
                     } else if (map[j][k] == 20) {
-                        myTFT.TFTdrawBitmap16Data(xdk, jm, (uint8_t *)pRoBlock1, 16, 16);
+                        myTFT.TFTdrawSpriteData(xdk, jm, (uint8_t *)pRoBlock1, 16, 16, BACKGR , false);
                     } else if (map[j][k] == 21) {
-                        myTFT.TFTdrawBitmap16Data(xdk, jm, (uint8_t *)pLuckBlock1, 16, 16);
+                        myTFT.TFTdrawSpriteData(xdk, jm, (uint8_t *)pLuckBlock1, 16, 16, BACKGR , false);
                     } else if (map[j][k] == 30) {
-                        myTFT.TFTdrawBitmap16Data(xdk, jm, (uint8_t *)pPipeL, 16, 16);
+                        myTFT.TFTdrawSpriteData(xdk, jm, (uint8_t *)pPipeL, 16, 16, BACKGR , false);
                     } else if (map[j][k] == 31) {
-                        myTFT.TFTdrawBitmap16Data(xdk, jm, (uint8_t *)pPipeR, 16, 16);
+                        myTFT.TFTdrawSpriteData(xdk, jm, (uint8_t *)pPipeR, 16, 16, BACKGR , false);
                     } else if (map[j][k] == 32) {
-                        myTFT.TFTdrawBitmap16Data(xdk, jm, (uint8_t *)pPipeTL, 16, 16);
+                        myTFT.TFTdrawSpriteData(xdk, jm, (uint8_t *)pPipeTL, 16, 16, BACKGR , false);
                     } else if (map[j][k] == 33) {
-                        myTFT.TFTdrawBitmap16Data(xdk, jm, (uint8_t *)pPipeTR, 16, 16);
+                        myTFT.TFTdrawSpriteData(xdk, jm, (uint8_t *)pPipeTR, 16, 16, BACKGR , false);
                     }
                 }
             }
         }
 
-        myTFT.TFTdrawSpriteData(xd2+68, 78, (uint8_t *)pKoopaIdle1, 16, 27, BACKGR);
-        myTFT.TFTdrawSpriteData(xd1, pos[1], (uint8_t *)Mario, 16, 24, BACKGR);
-        myTFT.TFTdrawText(20, 0, name, ST7735_WHITE, BACKGR, 1);
-        myTFT.TFTdrawText(20, 8, position, ST7735_WHITE, BACKGR, 1);
-        myTFT.TFTdrawText(94, 0, world, ST7735_WHITE, BACKGR, 1);
-        myTFT.TFTdrawText(142, 0, time, ST7735_WHITE, BACKGR, 1);
-        myTFT.TFTdrawText(142, 8, timer, ST7735_WHITE, BACKGR, 1);
+        myTFT.TFTdrawSpriteData(xd2+68, 78, (uint8_t *)pKoopaIdle1, 16, 27, BACKGR, true);
+        myTFT.TFTdrawSpriteData(xd1, pos[1], (uint8_t *)Mario, 16, 24, BACKGR, true);
+        myTFT.TFTdrawText(5, 0, name, ST7735_WHITE, BACKGR, 1);
+        myTFT.TFTdrawText(5, 8, position, ST7735_WHITE, BACKGR, 1);
+        myTFT.TFTdrawText(74, 0, world, ST7735_WHITE, BACKGR, 1);
+        myTFT.TFTdrawText(122, 0, time, ST7735_WHITE, BACKGR, 1);
+        myTFT.TFTdrawText(122, 8, timer, ST7735_WHITE, BACKGR, 1);
         TFT_MILLISEC_DELAY(10);
 
         //myTFT.TFTdrawBitmap16Data(y, xd1, (uint8_t *)Mario, 24, 16);
