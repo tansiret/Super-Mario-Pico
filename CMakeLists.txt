@@ -34,7 +34,7 @@ add_compile_options(-Wall -Wextra)
 
 # Tell CMake where to find the executable source file
 add_executable(${PROJECT_NAME} 
-  examples/my_mario/mario-demo.cpp
+  code/mario-demo.cpp
 )
 
 # Create map/bin/hex/uf2 files

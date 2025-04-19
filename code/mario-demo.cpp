@@ -311,21 +311,34 @@ void GameLoop(int timeLimit)
 {
 	// Game variables
 	std::span<const uint8_t> Mario;
-	int pos[2] = {32, 81}; // xy
-	//int vel[2] = {0, 0}; // unused now
-	//int acc[2] = {0, 10};  // unused now
-	//int y = 81;  // unused now
-	int x = 32;
-	int xd1 = x;
-	int xd2 = 0;
-	int spr = 1;
-	int time = 0;
-	int jumpFlag = 0; // Jump flag
-	int jumpCounter = 0; // Jump counter
-	char timer[20], position[30];
-	char name [] = "MARIO";
-	char world[] = "WORLD";
-	char timeText[] = "TIME";
+    int pos[2] = {32,81}; //xy
+    float velf[2] = {0,0};
+    int vel[2] = {0,0};
+    float acc[2] = {0,0};
+    float fric = 0; //friction
+    float g = 1;
+    float nf = -g;
+    int y = 81;
+    int x = 32;
+    int xd1 = x;
+    int yd2 = 96;
+    int xd2 = 0;
+    int xdk = 0;
+    int spr = 1;
+    int time = 0; //time
+    int s = 0; //score
+    int jumpFlag = 0;
+    int jumpCounter = 0;
+    char teststr1[] = " 2025 Tan S. AKINCI ";
+    char teststr2[] = "Mario is a trademark";
+    char teststr3[] = " of Nintendo - 1991 ";
+    char name [] = "MARIO";
+    char world[] = "WORLD";
+    char timeText[] = "TIME";
+    char timer[20];
+    char position[30];
+    char level[3];
+
 	// Start second core
 	multicore_launch_core1(main2);
 	myTFT.fillRect(0,0, 128, 160, LBLUE+1);
@@ -333,40 +346,118 @@ void GameLoop(int timeLimit)
 	while (time < timeLimit)
 	{
 		++time;
-		sprintf(timer, "%d", time);
-		sprintf(position, "X:%d,Y:%d", pos[0], pos[1]);
-		// Handle right movement
-		if (gpio_get(BTN_RIGHT)) {
-			pos[0] += 3;
-			spr = (jumpFlag == 0) ? ((time % 2) ? 3 : 1) : spr;
-		}
-		// Handle left movement
-		else if (gpio_get(BTN_LEFT)) {
-			pos[0] -= 3;
-			spr = (jumpFlag == 0) ? ((time % 2) ? 4 : 2) : spr;
-		}
-		// Idle state
-		else if (jumpFlag == 0) {
-			if (spr == 4 || spr == 6) spr = 2;
-			else if (spr == 3 || spr == 5) spr = 1;
-		}
-		// Handle jumping
-		if (gpio_get(BTN_JUMP) && jumpFlag == 0) {
-			jumpFlag = 1;
-		}
-		// Jumping physics
-		if (jumpFlag == 1 || jumpFlag == 2) {
-			spr = (spr == 2 || spr == 4 || gpio_get(BTN_LEFT)) ? 6 : 5;
-		}
-		if (jumpFlag == 1) {
-			++jumpCounter;
-			pos[1] -= 5;
-			if (jumpCounter == 7) jumpFlag = 2;
-		} else if (jumpFlag == 2) {
-			--jumpCounter;
-			pos[1] += 5;
-			if (jumpCounter == 0) jumpFlag = 0;
-		}
+		sprintf(timer,"%d",time);
+        sprintf(level,"%d",jumpFlag);
+        sprintf(position,"X:%d,Y:%d ",pos[0],pos[1]);
+		
+		//Right
+        if(gpio_get(BTN_RIGHT)){
+            acc[0]=1;
+        }
+
+        //Left
+        else if(gpio_get(BTN_LEFT)) {
+            acc[0]=-1;
+        }
+        else {
+            acc[0]=0;
+        }
+
+        //Physics lecture
+
+        if(velf[0]>=4.0f||velf[0]<=-4.0f) {
+            acc[0] = 0;
+        }
+        
+        if(vel[0]==0){
+            fric = 0;
+            if(jumpFlag==0){
+                if(spr==4||spr==6) {
+                    spr = 2;
+                }
+                else if(spr==3||spr==5) {
+                    spr = 1;
+                }
+                pos[1]=81;
+            }
+        }
+        else if(velf[0]>0.0f) {
+            fric = -0.5;
+            if(jumpFlag==0){
+                if(time % 3){
+                    spr = 3;
+                    pos[1]=80;
+                }
+                else {
+                    spr = 1;
+                    pos[1]=81;
+                }
+            }
+        }
+        else if(velf[0]<0.0f) {
+            fric = 0.5;
+            if(jumpFlag==0){
+                if(time % 3){
+                    spr = 4;
+                    pos[1]=80;
+                }
+                else {
+                    spr = 2;
+                    pos[1]=81;
+                }
+            }
+        }
+
+        velf[0] = velf[0] + acc[0] + fric;
+        /*
+        if(fabsf(floorf(velf[0]) - velf[0]) <= 0.01f){ //Rounding int control with float calc errors in mind
+            vel[0] = floor(velf[0]);
+        }
+        */
+        vel[0] = round(velf[0]);
+        pos[0] += vel[0];
+        
+        //Jumping sequence
+        if(gpio_get(BTN_JUMP)){
+            if (jumpFlag==0){
+                jumpFlag = 1;
+            }
+        }
+        if(jumpFlag==1||jumpFlag==2) {
+            if(spr==2||spr==4||gpio_get(BTN_LEFT)){
+                spr = 6;
+            }
+            else if(spr==1||spr==3||gpio_get(BTN_RIGHT)){
+                spr = 5;
+            }
+        }
+
+        if(jumpFlag==1){
+            ++jumpCounter;
+            acc[1]=-3;
+            nf = -g;
+            if(jumpCounter==4) { //Jump velocity limit
+                jumpFlag = 2; //Fall indicator
+                jumpCounter = 0;
+            }
+        }
+        if(jumpFlag==2){
+            acc[1]=0;
+            nf = 0;
+            if(pos[1]>=80) {
+                jumpFlag = 0;
+            }
+        }
+
+        if(jumpFlag==0){
+            velf[1]=0;
+            nf = -g;
+        }
+
+        velf[1] = velf[1] + acc[1] + g + nf;
+        vel[1] = floor(velf[1]);
+        pos[1] += vel[1];
+
 		// Sprite selection
 		switch (spr) {
 			case 1: Mario = pMarioIdleS1; break;
@@ -420,7 +511,7 @@ void GameLoop(int timeLimit)
 		myTFT.writeCharString(122, 8, timer);
 		myTFT.writeBuffer();
 		myTFT.clearBuffer(LBLUE+1);
-		MILLISEC_DELAY(0);
+		MILLISEC_DELAY(20);
 		if (pos[0] > 650) {
 			// Game over condition
 			break;
