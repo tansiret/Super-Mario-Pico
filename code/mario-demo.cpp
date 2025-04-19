@@ -326,6 +326,7 @@ void GameLoop(int timeLimit)
     int xdk = 0;
     int spr = 1;
     int time = 0; //time
+	uint32_t timesec = 0; //time in sec
     int s = 0; //score
     int jumpFlag = 0;
     int jumpCounter = 0;
@@ -339,14 +340,21 @@ void GameLoop(int timeLimit)
     char position[30];
     char level[3];
 
+	// Start timer
+	absolute_time_t start_time = get_absolute_time();
+
 	// Start second core
 	multicore_launch_core1(main2);
 	myTFT.fillRect(0,0, 128, 160, LBLUE+1);
 
-	while (time < timeLimit)
+	while (timesec < timeLimit)
 	{
+		// Time stuff
 		++time;
-		sprintf(timer,"%d",time);
+		absolute_time_t current_time = get_absolute_time();
+        timesec = absolute_time_diff_us(start_time, current_time) / 1000000;
+
+		sprintf(timer,"%d",200-timesec);
         sprintf(level,"%d",jumpFlag);
         sprintf(position,"X:%d,Y:%d ",pos[0],pos[1]);
 		
@@ -470,8 +478,8 @@ void GameLoop(int timeLimit)
 		if (pos[0] > 96) {
 			xd1 = 96;
 			xd2 = -pos[0] + 96;
-		} else if (pos[0] < 17) {
-			pos[0] = 18;
+		} else if (pos[0] < 0) {
+			pos[0] = 1;
 			xd2 = 0;
 		} else {
 			xd1 = pos[0];
@@ -500,6 +508,9 @@ void GameLoop(int timeLimit)
 				}
 			}
 		}
+
+		//Collision
+
 		// **SPRITE RENDERING**
 		myTFT.drawSpriteData(xd2 + 68, 78, pKoopaIdle1, 16, 27, LBLUE, false);
 		myTFT.drawSpriteData(xd1, pos[1], Mario, 16, 24, LBLUE, false);
@@ -536,7 +547,7 @@ int main()
 {
 	SetupHW();
 	DisplayTitle();
-	GameLoop(2000);
+	GameLoop(200);
 	EndGame();
 	return 0;	
 }
