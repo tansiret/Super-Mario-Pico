@@ -12,8 +12,9 @@ ST7735_TFT myTFT;
 #define BTN_JUMP 28
 #define BTN_RIGHT 27
 #define BTN_LEFT 26
-#define BTN_4 25
-#define BUZZ 1
+#define BTN_DOWN 22
+#define BUZZ1 16
+#define BUZZ2 17
 // Graphics
 #define LBLUE 0x0337
 // Map
@@ -190,13 +191,13 @@ void SetupHW(void)
 	gpio_set_dir(BTN_RIGHT, GPIO_IN);
 	gpio_init(BTN_LEFT);
 	gpio_set_dir(BTN_LEFT, GPIO_IN);
-	gpio_init(BTN_4);
-	gpio_set_dir(BTN_4, GPIO_IN);
+	gpio_init(BTN_DOWN);
+	gpio_set_dir(BTN_DOWN, GPIO_IN);
 
-	gpio_pull_down(BTN_JUMP);
-	gpio_pull_down(BTN_RIGHT);
-	gpio_pull_down(BTN_LEFT);
-	gpio_pull_down(BTN_4);
+	gpio_pull_up(BTN_JUMP);
+	gpio_pull_up(BTN_RIGHT);
+	gpio_pull_up(BTN_LEFT);
+	gpio_pull_up(BTN_DOWN);
 
 	//*************** USER OPTION 0 SPI_SPEED + TYPE ***********
 	bool bhardwareSPI = false; // true for hardware spi,
@@ -271,7 +272,7 @@ void DisplayGameOver()
 void play_tone(uint slice_num, int frequency, int duration) {
 	if (frequency == 0) {
 		// Silence
-		pwm_set_gpio_level(BUZZ, 0);
+		pwm_set_gpio_level(BUZZ1, 0);
 		sleep_ms(duration);
 		return;
 	}
@@ -286,17 +287,17 @@ void play_tone(uint slice_num, int frequency, int duration) {
 	pwm_config_set_wrap(&config, wrap);
 	pwm_init(slice_num, &config, true);
 	// Set duty cycle to 50%
-	pwm_set_gpio_level(BUZZ, wrap / 2);
+	pwm_set_gpio_level(BUZZ1, wrap / 2);
 	// Play the note for specified duration
 	sleep_ms(duration);
 	// Stop the tone
-	pwm_set_gpio_level(BUZZ, 0);
+	pwm_set_gpio_level(BUZZ1, 0);
 }
 
 void main2() {
 	// Initialize GPIO for PWM
-	gpio_set_function(BUZZ, GPIO_FUNC_PWM);
-	uint slice_num = pwm_gpio_to_slice_num(BUZZ);
+	gpio_set_function(BUZZ1, GPIO_FUNC_PWM);
+	uint slice_num = pwm_gpio_to_slice_num(BUZZ1);
 	// Play the Super Mario Bros theme
 	while (1) {
 		for (int i = 0; i < sizeof(melody)/sizeof(melody[0]); i++) {
@@ -359,12 +360,12 @@ void GameLoop(int timeLimit)
         sprintf(position,"X:%d,Y:%d ",pos[0],pos[1]);
 		
 		//Right
-        if(gpio_get(BTN_RIGHT)){
+        if(!gpio_get(BTN_RIGHT)){ //Pull up button
             acc[0]=1;
         }
 
         //Left
-        else if(gpio_get(BTN_LEFT)) {
+        else if(!gpio_get(BTN_LEFT)) {
             acc[0]=-1;
         }
         else {
@@ -426,16 +427,16 @@ void GameLoop(int timeLimit)
         pos[0] += vel[0];
         
         //Jumping sequence
-        if(gpio_get(BTN_JUMP)){
+        if(!gpio_get(BTN_JUMP)){
             if (jumpFlag==0){
                 jumpFlag = 1;
             }
         }
         if(jumpFlag==1||jumpFlag==2) {
-            if(spr==2||spr==4||gpio_get(BTN_LEFT)){
+            if(spr==2||spr==4||!gpio_get(BTN_LEFT)){
                 spr = 6;
             }
-            else if(spr==1||spr==3||gpio_get(BTN_RIGHT)){
+            else if(spr==1||spr==3||!gpio_get(BTN_RIGHT)){
                 spr = 5;
             }
         }
@@ -535,8 +536,8 @@ void EndGame(void)
 	gpio_deinit(BTN_JUMP);
 	gpio_deinit(BTN_RIGHT);
 	gpio_deinit(BTN_LEFT);
-	gpio_deinit(BTN_4);
-	gpio_deinit(BUZZ);
+	gpio_deinit(BTN_DOWN);
+	gpio_deinit(BUZZ1);
 	DisplayGameOver();
 	myTFT.destroyBuffer();
 	myTFT.TFTPowerDown(); 
