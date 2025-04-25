@@ -185,6 +185,7 @@ void SetupHW(void)
 	stdio_init_all(); // Initialize chosen serial port
 	sleep_ms(500);
 	printf("Game Start\r\n");
+
 	gpio_init(BTN_JUMP);
 	gpio_set_dir(BTN_JUMP, GPIO_IN);
 	gpio_init(BTN_RIGHT);
@@ -262,7 +263,7 @@ void DisplayGameOver()
 	char teststr1[] = "GAME OVER";
 	myTFT.setRotation(myTFT.Degrees_270);
 	myTFT.drawBitmap16Data(0, 0, pSuperMarioWorldTitle, 160, 128);
-	myTFT.writeCharString(30, 70, teststr1);
+	myTFT.writeCharString(46, 70, teststr1);
 	myTFT.writeBuffer();
 	MILLISEC_DELAY(3000);
 	myTFT.fillScreen(LBLUE);
@@ -312,7 +313,13 @@ void GameLoop(int timeLimit)
 {
 	// Game variables
 	std::span<const uint8_t> Mario;
-    int pos[2] = {32,81}; //xy
+    int pos[2] = {32,80}; //xy
+	int posC[2] = {32,80}; //collision xy
+	int colB = 0; //collision flags
+	int colT = 0;
+	int colR = 0;
+	int colL = 0;
+	int colM[4]; //collision matrix
     float velf[2] = {0,0};
     int vel[2] = {0,0};
     float acc[2] = {0,0};
@@ -329,8 +336,8 @@ void GameLoop(int timeLimit)
     int time = 0; //time
 	uint32_t timesec = 0; //time in sec
     int s = 0; //score
-    int jumpFlag = 0;
-    int jumpCounter = 0;
+    int jumpF = 0; //jump state flag
+    int jumpC = 0; //jump counter to set limit
     char teststr1[] = " 2025 Tan S. AKINCI ";
     char teststr2[] = "Mario is a trademark";
     char teststr3[] = " of Nintendo - 1991 ";
@@ -340,6 +347,25 @@ void GameLoop(int timeLimit)
     char timer[20];
     char position[30];
     char level[3];
+
+	//Collision map
+	int map2[MAPH*16][MAPW*16];
+	for (int j = 0; j < MAPH*16; j++) {
+		int j2 = j/16;
+		for (int k = 0; k < MAPW*16; k++) {
+			int k2 = k/16;
+			map2[j][k] = map[j2][k2];
+		}
+	}
+
+	/*
+	for (int j = 0; j < MAPW*16; j++) {
+		for (int k = 0; k < 32; k++) {
+			printf(" %2d ",map2[j][k]);
+		}
+		printf("\n");
+	}
+	*/
 
 	// Start timer
 	absolute_time_t start_time = get_absolute_time();
@@ -356,12 +382,27 @@ void GameLoop(int timeLimit)
         timesec = absolute_time_diff_us(start_time, current_time) / 1000000;
 
 		sprintf(timer,"%d",200-timesec);
-        sprintf(level,"%d",jumpFlag);
-        sprintf(position,"X:%d,Y:%d ",pos[0],pos[1]);
+        sprintf(level,"%d",jumpF);
+        sprintf(position,"X:%d,Y:%d ",colL,posC[1]);
 		
+		//Collision
+
+		// Bottom collision (check both feet)
+		colB = (map2[posC[1]][posC[0]+1] >= 10) || (map2[posC[1]][posC[0]+14] >= 10);
+
+		// Top collision (check both sides of head)
+		colT = (map2[posC[1]-24][posC[0]+1] >= 10) || (map2[posC[1]-24][posC[0]+14] >= 10);
+
+		// Right collision (check head and feet)
+		colR = (map2[posC[1]-1][posC[0]+16] >= 10) || (map2[posC[1]-23][posC[0]+16] >= 10);
+
+		// Left collision (check head and feet)
+		colL = (map2[posC[1]-1][posC[0]-1] >= 10) || (map2[posC[1]-23][posC[0]-1] >= 10);
+
+		//Movement
 		//Right
         if(!gpio_get(BTN_RIGHT)){ //Pull up button
-            acc[0]=1;
+			acc[0]=1;
         }
 
         //Left
@@ -380,59 +421,63 @@ void GameLoop(int timeLimit)
         
         if(vel[0]==0){
             fric = 0;
-            if(jumpFlag==0){
+            if(jumpF==0){
                 if(spr==4||spr==6) {
                     spr = 2;
                 }
                 else if(spr==3||spr==5) {
                     spr = 1;
                 }
-                pos[1]=81;
             }
         }
         else if(velf[0]>0.0f) {
-            fric = -0.5;
-            if(jumpFlag==0){
+			fric = -0.5;
+			if (colR)
+			{
+				acc[0] = 0;
+				velf[0] = 0.0f;
+				fric = 0;
+				posC[0] -= 2;
+			}
+			
+            if(jumpF==0){
                 if(time % 3){
                     spr = 3;
-                    pos[1]=80;
                 }
                 else {
                     spr = 1;
-                    pos[1]=81;
                 }
             }
         }
         else if(velf[0]<0.0f) {
-            fric = 0.5;
-            if(jumpFlag==0){
+			fric = 0.5;
+			if (colL)
+			{
+				acc[0] = 0;
+				velf[0] = 0.0f;
+				fric = 0;
+				posC[0] += 2;
+			}
+            if(jumpF==0){
                 if(time % 3){
                     spr = 4;
-                    pos[1]=80;
                 }
                 else {
                     spr = 2;
-                    pos[1]=81;
                 }
             }
         }
 
         velf[0] = velf[0] + acc[0] + fric;
-        /*
-        if(fabsf(floorf(velf[0]) - velf[0]) <= 0.01f){ //Rounding int control with float calc errors in mind
-            vel[0] = floor(velf[0]);
-        }
-        */
         vel[0] = round(velf[0]);
-        pos[0] += vel[0];
+        posC[0] += vel[0];
         
         //Jumping sequence
-        if(!gpio_get(BTN_JUMP)){
-            if (jumpFlag==0){
-                jumpFlag = 1;
-            }
-        }
-        if(jumpFlag==1||jumpFlag==2) {
+        if (!gpio_get(BTN_JUMP) && jumpF == 0 && colB) {
+			jumpF = 1;
+		}
+
+        if(jumpF==1||vel[1]<0) {
             if(spr==2||spr==4||!gpio_get(BTN_LEFT)){
                 spr = 6;
             }
@@ -441,32 +486,45 @@ void GameLoop(int timeLimit)
             }
         }
 
-        if(jumpFlag==1){
-            ++jumpCounter;
-            acc[1]=-3;
-            nf = -g;
-            if(jumpCounter==4) { //Jump velocity limit
-                jumpFlag = 2; //Fall indicator
-                jumpCounter = 0;
-            }
-        }
-        if(jumpFlag==2){
-            acc[1]=0;
-            nf = 0;
-            if(pos[1]>=80) {
-                jumpFlag = 0;
+		//Jump flag control
+		if(jumpF==1){ //Jump indicator
+            ++jumpC;
+			if(jumpC<3) { //Jump velocity limit
+            	vel[1]=-10;
+			}
+            else {
+				//acc[1]=0;
+                jumpF=0; //No jump
+				jumpC=0;
             }
         }
 
-        if(jumpFlag==0){
-            velf[1]=0;
-            nf = -g;
-        }
+		//Collision
+		if (colB && vel[1]>=0) {
+			//nf = -g;          // Cancel gravity
+			g = 0;
+			jumpF = 0;
+			vel[1] = 0;
+		} 
+		else {
+			g = 1;           // Gravity applies
+		}
 
-        velf[1] = velf[1] + acc[1] + g + nf;
-        vel[1] = floor(velf[1]);
-        pos[1] += vel[1];
-
+        //velf[1] = velf[1] + acc[1] + g;
+        //vel[1] = round(velf[1]);
+		vel[1] = vel[1] + g;
+		posC[1] += vel[1];
+		/*
+		if (!((map2[posC[1]-1][posC[0]+1] >= 10) || (map2[posC[1]-1][posC[0]+14] >= 10))) {
+			posC[1] = posC[1];
+		}
+		*/
+		int i = 0;
+		while((map2[posC[1]-i-1][posC[0]+4] >= 10) || (map2[posC[1]-i-1][posC[0]+12] >= 10)) {
+			++i;
+		}
+		posC[1] = posC[1]-i;
+		
 		// Sprite selection
 		switch (spr) {
 			case 1: Mario = pMarioIdleS1; break;
@@ -476,45 +534,56 @@ void GameLoop(int timeLimit)
 			case 5: Mario = pMarioJumpS1; break;
 			case 6: Mario = pMarioJumpS2; break;
 		}
+
+		if(!((map2[posC[1]-1][posC[0]+4] >= 10) || (map2[posC[1]-1][posC[0]+12] >= 10))) {
+			pos[1] = posC[1];
+		}
+		pos[0] = posC[0];
+
+		//Camera
 		if (pos[0] > 96) {
 			xd1 = 96;
 			xd2 = -pos[0] + 96;
 		} else if (pos[0] < 0) {
-			pos[0] = 1;
+			++pos[0];
+			++posC[0];
 			xd2 = 0;
 		} else {
 			xd1 = pos[0];
 			xd2 = 0;
 		}
+
 		for (int j = 0; j < MAPH; j++) {
 			for (int k = 0; k < MAPW; k++) {
-				int jm = j * 16 + 24;
-				int km = k * 16;
-				int xdk = xd2 + km;
+				int jgrid = j * 16 + 24;
+				int kgrid = k * 16;
+				int xdk = xd2 + kgrid;
+				// Map drawing
 				// Ensure tiles at edges are pre-rendered
 				if (xdk >= -16 && xdk <= 176 ){
 					switch (map[j][k]) {
-						//case 0:  myTFT.fillRect(xdk, jm, 16, 16, LBLUE); break;
-						case 0:  myTFT.drawBitmap16Data(xdk, jm, pSky, 16, 16); break;
-						case 10: myTFT.drawBitmap16Data(xdk, jm, pDirt,16, 16); break;
-						case 11: myTFT.drawBitmap16Data(xdk, jm, pGrass,16, 16); break;
-						case 12: myTFT.drawBitmap16Data(xdk, jm, pWoodBlock,16, 16); break;
-						case 20: myTFT.drawBitmap16Data(xdk, jm, pRoBlock1,16, 16); break;
-						case 21: myTFT.drawBitmap16Data(xdk, jm, pLuckBlock1,16, 16); break;
-						case 30: myTFT.drawBitmap16Data(xdk, jm, pPipeL,16, 16); break;
-						case 31: myTFT.drawBitmap16Data(xdk, jm, pPipeR,16, 16); break;
-						case 32: myTFT.drawBitmap16Data(xdk, jm, pPipeTL,16, 16); break;
-						case 33: myTFT.drawBitmap16Data(xdk, jm, pPipeTR,16, 16); break;
+						//case 0:  myTFT.fillRect(xdk, jgrid, 16, 16, LBLUE); break;
+						case 0:  myTFT.drawBitmap16Data(xdk, jgrid, pSky, 16, 16); break;
+						case 10: myTFT.drawBitmap16Data(xdk, jgrid, pDirt,16, 16); break;
+						case 11: myTFT.drawBitmap16Data(xdk, jgrid, pGrass,16, 16); break;
+						case 12: myTFT.drawBitmap16Data(xdk, jgrid, pWoodBlock,16, 16); break;
+						case 20: myTFT.drawBitmap16Data(xdk, jgrid, pRoBlock1,16, 16); break;
+						case 21: myTFT.drawBitmap16Data(xdk, jgrid, pLuckBlock1,16, 16); break;
+						case 30: myTFT.drawBitmap16Data(xdk, jgrid, pPipeL,16, 16); break;
+						case 31: myTFT.drawBitmap16Data(xdk, jgrid, pPipeR,16, 16); break;
+						case 32: myTFT.drawBitmap16Data(xdk, jgrid, pPipeTL,16, 16); break;
+						case 33: myTFT.drawBitmap16Data(xdk, jgrid, pPipeTR,16, 16); break;
 					}
 				}
 			}
 		}
 
-		//Collision
-
 		// **SPRITE RENDERING**
 		myTFT.drawSpriteData(xd2 + 68, 78, pKoopaIdle1, 16, 27, LBLUE, false);
 		myTFT.drawSpriteData(xd1, pos[1], Mario, 16, 24, LBLUE, false);
+		//Collision debugging
+		myTFT.fillRect(xd1+1, pos[1]+1, 16, 1, myTFT.C_YELLOW);
+		myTFT.fillRect(xd1+1, pos[1]+23, 16, 1, myTFT.C_YELLOW);
 		// **HUD Display**
 		myTFT.writeCharString(5, 0, name);
 		myTFT.writeCharString(5, 8, position);
@@ -524,7 +593,7 @@ void GameLoop(int timeLimit)
 		myTFT.writeBuffer();
 		myTFT.clearBuffer(LBLUE+1);
 		MILLISEC_DELAY(20);
-		if (pos[0] > 650) {
+		if (posC[1] > 95) {
 			// Game over condition
 			break;
 		}
