@@ -18,11 +18,12 @@ ST7735_TFT myTFT;
 // Graphics
 #define LBLUE 0x0337
 // Map
-#define MAPH 7
+#define MAPH 8
 #define MAPW 40
 
 	//Map
 	int map[MAPH][MAPW] = { 
+		{00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00},
 		{00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00},
 		{00, 21, 00, 00, 00, 20, 21, 20, 21, 20, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00},
 		{00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 32, 33, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 12, 12, 00, 00, 12, 12, 00, 00, 00, 00},
@@ -346,6 +347,7 @@ void GameLoop(int timeLimit)
     char timeText[] = "TIME";
     char timer[20];
     char position[30];
+	char collision[30];
     char level[3];
 
 	//Collision map
@@ -383,21 +385,22 @@ void GameLoop(int timeLimit)
 
 		sprintf(timer,"%d",200-timesec);
         sprintf(level,"%d",jumpF);
-        sprintf(position,"X:%d,Y:%d ",colL,posC[1]);
+        sprintf(position,"X:%d,Y:%d ",posC[0],posC[1]);
+		sprintf(collision,"B:%d,T:%d,L:%d,R:%d ",colB,colT,colL,colR);
 		
 		//Collision
 
 		// Bottom collision (check both feet)
-		colB = (map2[posC[1]][posC[0]+1] >= 10) || (map2[posC[1]][posC[0]+14] >= 10);
+		colB = (map2[posC[1]+24][posC[0]+1] >= 10) || (map2[posC[1]+24][posC[0]+14] >= 10);
 
 		// Top collision (check both sides of head)
-		colT = (map2[posC[1]-24][posC[0]+1] >= 10) || (map2[posC[1]-24][posC[0]+14] >= 10);
+		colT = (map2[posC[1]][posC[0]+1] >= 10) || (map2[posC[1]][posC[0]+14] >= 10);
 
 		// Right collision (check head and feet)
-		colR = (map2[posC[1]-1][posC[0]+16] >= 10) || (map2[posC[1]-23][posC[0]+16] >= 10);
+		colR = (map2[posC[1]+23][posC[0]+16] >= 10) || (map2[posC[1]+1][posC[0]+16] >= 10);
 
 		// Left collision (check head and feet)
-		colL = (map2[posC[1]-1][posC[0]-1] >= 10) || (map2[posC[1]-23][posC[0]-1] >= 10);
+		colL = (map2[posC[1]+23][posC[0]-1] >= 10) || (map2[posC[1]+1][posC[0]-1] >= 10);
 
 		//Movement
 		//Right
@@ -520,7 +523,7 @@ void GameLoop(int timeLimit)
 		}
 		*/
 		int i = 0;
-		while((map2[posC[1]-i-1][posC[0]+4] >= 10) || (map2[posC[1]-i-1][posC[0]+12] >= 10)) {
+		while((map2[posC[1]-i+23][posC[0]+4] >= 10) || (map2[posC[1]-i+23][posC[0]+12] >= 10)) {
 			++i;
 		}
 		posC[1] = posC[1]-i;
@@ -535,7 +538,7 @@ void GameLoop(int timeLimit)
 			case 6: Mario = pMarioJumpS2; break;
 		}
 
-		if(!((map2[posC[1]-1][posC[0]+4] >= 10) || (map2[posC[1]-1][posC[0]+12] >= 10))) {
+		if(!((map2[posC[1]+23][posC[0]+4] >= 10) || (map2[posC[1]+23][posC[0]+12] >= 10))) {
 			pos[1] = posC[1];
 		}
 		pos[0] = posC[0];
@@ -555,7 +558,7 @@ void GameLoop(int timeLimit)
 
 		for (int j = 0; j < MAPH; j++) {
 			for (int k = 0; k < MAPW; k++) {
-				int jgrid = j * 16 + 24;
+				int jgrid = j * 16;
 				int kgrid = k * 16;
 				int xdk = xd2 + kgrid;
 				// Map drawing
@@ -587,13 +590,14 @@ void GameLoop(int timeLimit)
 		// **HUD Display**
 		myTFT.writeCharString(5, 0, name);
 		myTFT.writeCharString(5, 8, position);
+		myTFT.writeCharString(5, 16, collision);
 		myTFT.writeCharString(74, 0, world);
 		myTFT.writeCharString(122, 0, timeText);
 		myTFT.writeCharString(122, 8, timer);
 		myTFT.writeBuffer();
 		myTFT.clearBuffer(LBLUE+1);
 		MILLISEC_DELAY(20);
-		if (posC[1] > 95) {
+		if (posC[1] > 100) {
 			// Game over condition
 			break;
 		}
