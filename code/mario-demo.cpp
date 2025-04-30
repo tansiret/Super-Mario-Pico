@@ -18,11 +18,12 @@ ST7735_TFT myTFT;
 // Graphics
 #define LBLUE 0x0337
 // Map
-#define MAPH 8
+#define MAPH 9
 #define MAPW 40
 
 	//Map
-	int map[MAPH][MAPW] = { 
+	int map[MAPH][MAPW] = {
+		{00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00}, 
 		{00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00},
 		{00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00},
 		{00, 21, 00, 00, 00, 20, 21, 20, 21, 20, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00},
@@ -30,7 +31,7 @@ ST7735_TFT myTFT;
 		{00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 32, 33, 00, 00, 30, 31, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 12, 12, 12, 00, 00, 12, 12, 12, 00, 00, 00},
 		{00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 30, 31, 00, 00, 30, 31, 00, 00, 00, 00, 00, 00, 00, 00, 00, 12, 12, 12, 12, 00, 00, 12, 12, 12, 12, 00, 00},
 		{11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 00, 00, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11},
-		{10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 00, 00, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10} 
+		{00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00}
 	};
 
 // Musical note frequencies (Hz)
@@ -264,7 +265,7 @@ void DisplayGameOver()
 	char teststr1[] = "GAME OVER";
 	myTFT.setRotation(myTFT.Degrees_270);
 	myTFT.drawBitmap16Data(0, 0, pSuperMarioWorldTitle, 160, 128);
-	myTFT.writeCharString(46, 70, teststr1);
+	myTFT.writeCharString(42, 70, teststr1);
 	myTFT.writeBuffer();
 	MILLISEC_DELAY(3000);
 	myTFT.fillScreen(LBLUE);
@@ -339,6 +340,7 @@ void GameLoop(int timeLimit)
     int s = 0; //score
     int jumpF = 0; //jump state flag
     int jumpC = 0; //jump counter to set limit
+	int death = 0; //death flag
     char teststr1[] = " 2025 Tan S. AKINCI ";
     char teststr2[] = "Mario is a trademark";
     char teststr3[] = " of Nintendo - 1991 ";
@@ -390,17 +392,19 @@ void GameLoop(int timeLimit)
 		
 		//Collision
 
-		// Bottom collision (check both feet)
-		colB = (map2[posC[1]+24][posC[0]+1] >= 10) || (map2[posC[1]+24][posC[0]+14] >= 10);
+		if(posC[1]>=0){
+			// Bottom collision (check both feet)
+			colB = (map2[posC[1]+24][posC[0]+1] >= 10) || (map2[posC[1]+24][posC[0]+14] >= 10);
 
-		// Top collision (check both sides of head)
-		colT = (map2[posC[1]][posC[0]+1] >= 10) || (map2[posC[1]][posC[0]+14] >= 10);
+			// Top collision (check both sides of head)
+			colT = (map2[posC[1]][posC[0]+1] >= 10) || (map2[posC[1]][posC[0]+14] >= 10);
 
-		// Right collision (check head and feet)
-		colR = (map2[posC[1]+23][posC[0]+16] >= 10) || (map2[posC[1]+1][posC[0]+16] >= 10);
+			// Right collision (check head and feet)
+			colR = (map2[posC[1]+23][posC[0]+16] >= 10) || (map2[posC[1]+1][posC[0]+16] >= 10);
 
-		// Left collision (check head and feet)
-		colL = (map2[posC[1]+23][posC[0]-1] >= 10) || (map2[posC[1]+1][posC[0]-1] >= 10);
+			// Left collision (check head and feet)
+			colL = (map2[posC[1]+23][posC[0]-1] >= 10) || (map2[posC[1]+1][posC[0]-1] >= 10);
+		}
 
 		//Movement
 		//Right
@@ -438,7 +442,7 @@ void GameLoop(int timeLimit)
 			if (colR)
 			{
 				acc[0] = 0;
-				velf[0] = 0.0f;
+				velf[0] = 0;
 				fric = 0;
 				posC[0] -= 2;
 			}
@@ -457,7 +461,7 @@ void GameLoop(int timeLimit)
 			if (colL)
 			{
 				acc[0] = 0;
-				velf[0] = 0.0f;
+				velf[0] = 0;
 				fric = 0;
 				posC[0] += 2;
 			}
@@ -492,17 +496,21 @@ void GameLoop(int timeLimit)
 		//Jump flag control
 		if(jumpF==1){ //Jump indicator
             ++jumpC;
-			if(jumpC<3) { //Jump velocity limit
-            	vel[1]=-10;
-			}
-            else {
+			if(colT||jumpC>=3) {
 				//acc[1]=0;
                 jumpF=0; //No jump
 				jumpC=0;
             }
+            else {
+				vel[1]=-10;
+            }
         }
 
 		//Collision
+		if (colT) {
+			vel[1] = -vel[1]/4;
+			posC[1] += 2;
+		}
 		if (colB && vel[1]>=0) {
 			//nf = -g;          // Cancel gravity
 			g = 0;
@@ -538,9 +546,33 @@ void GameLoop(int timeLimit)
 			case 6: Mario = pMarioJumpS2; break;
 		}
 
+		//Boundary and death checks
+		if (posC[1] < 0) {
+			// When hitting top boundary
+			colB = 0;
+			colT = 0;
+			colL = 0;
+			colR = 0;
+		}
+
+		if (posC[1] >= 100) {
+			// When hitting bottom boundary
+			pos[1] = 96;
+			vel[1] = 0;
+			colB = 1;
+			death = 1;
+		}
+
 		if(!((map2[posC[1]+23][posC[0]+4] >= 10) || (map2[posC[1]+23][posC[0]+12] >= 10))) {
 			pos[1] = posC[1];
 		}
+
+		/*
+		if(!((map2[posC[1]+23][posC[0]+17] >= 10) || (map2[posC[1]+1][posC[0]+17] >= 10))||!((map2[posC[1]+23][posC[0]-2] >= 10) || (map2[posC[1]+1][posC[0]-2] >= 10))) {
+			pos[0] = posC[0];
+		}
+		*/
+
 		pos[0] = posC[0];
 
 		//Camera
@@ -556,7 +588,7 @@ void GameLoop(int timeLimit)
 			xd2 = 0;
 		}
 
-		for (int j = 0; j < MAPH; j++) {
+		for (int j = 0; j < MAPH-1; j++) { //rendering only the visible part
 			for (int k = 0; k < MAPW; k++) {
 				int jgrid = j * 16;
 				int kgrid = k * 16;
@@ -582,7 +614,7 @@ void GameLoop(int timeLimit)
 		}
 
 		// **SPRITE RENDERING**
-		myTFT.drawSpriteData(xd2 + 68, 78, pKoopaIdle1, 16, 27, LBLUE, false);
+		//myTFT.drawSpriteData(xd2 + 68, 78, pKoopaIdle1, 16, 27, LBLUE, false);
 		myTFT.drawSpriteData(xd1, pos[1], Mario, 16, 24, LBLUE, false);
 		//Collision debugging
 		myTFT.fillRect(xd1+1, pos[1]+1, 16, 1, myTFT.C_YELLOW);
@@ -596,11 +628,11 @@ void GameLoop(int timeLimit)
 		myTFT.writeCharString(122, 8, timer);
 		myTFT.writeBuffer();
 		myTFT.clearBuffer(LBLUE+1);
-		MILLISEC_DELAY(20);
-		if (posC[1] > 100) {
-			// Game over condition
+		if (death==1) { //game over condition
 			break;
 		}
+		
+		MILLISEC_DELAY(20);
 	}
 }
 
